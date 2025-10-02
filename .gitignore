@@ -1,0 +1,21 @@
+# .gitignore file
+# Ignore Terraform state files
+*.tfstate
+*.tfstate.backup
+# Ignore Terraform plan files
+*.tfplan
+tfplan
+# Ignore Terraform variables files with senstive data
+terraform.tfvars
+# Ignore local .terraform directory
+.terraform/
+# Ignore Terraform lock files
+.terraform.lock.hcl
+
+# Ignore prototype workflows
+.github/workflows/prototype-*.yml
+legacy/
+
+# remove after finalizing:
+Architecture.md
+docs/

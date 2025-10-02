@@ -1,0 +1,209 @@
+name: Terraform VPC Pipeline
+description: Builds VPC with public/private subnets, Route tables, NACL, and SG in the specified environment.
+
+on:
+  pull_request:
+    branches:
+      - main
+      - test
+      - prod
+  push:
+    branches:
+      - main
+      - test
+      - prod
+  workflow_dispatch: # Manual trigger included to allow manual runs if needed
+
+permissions:
+  id-token: write # Required for github oidc authentication with AWS
+  contents: read # Allow repository contents to be checked out
+  pull-requests: write # Allow PR comments with terraform plan
+
+jobs:
+  # First job: Tests & Lint (always runs)
+  tests:
+    name: Tests & Lint
+    runs-on: ubuntu-latest
+
+    # necessary to set environment per branch
+    environment: ${{ github.ref == 'refs/heads/main' && 'dev' ||
+      github.ref == 'refs/heads/test' && 'test' ||
+      github.ref == 'refs/heads/prod' && 'prod' }}
+    env:
+      ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'dev' ||
+        github.ref == 'refs/heads/test' && 'test' ||
+        github.ref == 'refs/heads/prod' && 'prod' }}
+
+    steps:
+      # Checkout the repo
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Terraform checks
+      # Install Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.12.2" # Pin to specific version
+
+      - name: Terraform fmt check
+        working-directory: infrastructure/environments/${{ env.ENVIRONMENT  }}
+        run: terraform fmt -check -recursive # enforce terraform formatting standards
+
+      - name: Terraform Init # for validation
+        working-directory: infrastructure/environments/${{ env.ENVIRONMENT }}
+        run: terraform init -backend=false # doesn't affect state by skipping remote state; only validates modules/providers
+
+      - name: Terraform validate
+        working-directory: infrastructure/environments/${{ env.ENVIRONMENT  }}
+        run: terraform validate # validate terraform syntax
+
+      - name: Terraform lint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+      - run: tflint --init && tflint # lint terraform code for best practices
+
+      - name: tfsec
+        uses: aquasecurity/tfsec-action@v1.0.0 # scan terraform code for security misconfigurations
+
+  # Second job: Terraform Plan (on PRs)
+  plan:
+    runs-on: ubuntu-latest
+    needs: [tests] # only run if tests pass
+    if: github.event_name == 'pull_request' # only run on PRs
+
+    # necessary to set environment per branch
+    environment: ${{ github.ref == 'refs/heads/main' && 'dev' ||
+      github.ref == 'refs/heads/test' && 'test' ||
+      github.ref == 'refs/heads/prod' && 'prod' }}
+    env:
+      ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'dev' ||
+        github.ref == 'refs/heads/test' && 'test' ||
+        github.ref == 'refs/heads/prod' && 'prod' }}
+
+    defaults:
+      run:
+        working-directory: infrastructure/environments/${{ env.ENVIRONMENT }} # Keep runs scoped to environment code
+
+    steps:
+      # Checkout the repo
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Configure AWS credentials using OIDC
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-oidc-role-${{ env.ENVIRONMENT }}
+
+      # Export AWS region and TF_VAR_region for terraform resources
+      - name: Export AWS region
+        run: |
+          echo "AWS_REGION=${{ vars.AWS_REGION }}" >> $GITHUB_ENV
+          echo "TF_VAR_region=${{ vars.AWS_REGION }}" >> $GITHUB_ENV
+
+      # Fetch backend config from SSM
+      # - Retrieves global S3/DynamoDB state backend
+      # - Creates backend config file for terraform init
+      - name: Fetch Backend Config
+        run: |
+          BUCKET=$(aws ssm get-parameter --name "/tf/global-infra/backend/bucket" --query "Parameter.Value" --output text)
+          TABLE=$(aws ssm get-parameter --name "/tf/global-infra/backend/table" --query "Parameter.Value" --output text)
+          REGION=$(aws ssm get-parameter --name "/tf/global-infra/backend/region" --query "Parameter.Value" --output text)
+          echo "TF_VAR_state_bucket_name=$BUCKET" >> $GITHUB_ENV
+
+          cat > ${{ env.ENVIRONMENT }}.hcl <<EOF
+          bucket         = "$BUCKET"
+          key            = "${{ env.ENVIRONMENT }}/terraform.tfstate"
+          region         = "$REGION"
+          dynamodb_table = "$TABLE"
+          encrypt        = true
+          EOF
+
+      # Install Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      # Initialize Terraform locally on github runner
+      - name: Terraform Init
+        run: terraform init -backend-config=${{ env.ENVIRONMENT }}.hcl
+
+      # Plan terraform changes and output to file
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -var-file="${{ env.ENVIRONMENT }}.tfvars" -var="aws_account_id=${{ secrets.AWS_ACCOUNT_ID }}" -out=tfplan
+
+      # Comment PR with tfplan output
+      - name: Comment PR with Plan
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          path: tfplan
+
+  # Third job: Terraform Apply (on pushes to main/test/prod)
+  apply:
+    runs-on: ubuntu-latest
+    needs: [tests] # only run if tests pass
+    if: github.event_name == 'push' # only run on pushes
+
+    # necessary to set environment per branch
+    environment: ${{ github.ref == 'refs/heads/main' && 'dev' ||
+      github.ref == 'refs/heads/test' && 'test' ||
+      github.ref == 'refs/heads/prod' && 'prod' }}
+    env:
+      ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'dev' ||
+        github.ref == 'refs/heads/test' && 'test' ||
+        github.ref == 'refs/heads/prod' && 'prod' }}
+
+    defaults:
+      run:
+        working-directory: infrastructure/environments/${{ env.ENVIRONMENT }} # Keep runs scoped to environment code
+
+    steps:
+      # Checkout the repo
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Configure AWS credentials using OIDC
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-oidc-role-${{ env.ENVIRONMENT }}
+
+      # Export AWS region and TF_VAR_region for terraform resources
+      - name: Export AWS Region
+        run: |
+          echo "AWS_REGION=${{ vars.AWS_REGION }}" >> $GITHUB_ENV
+          echo "TF_VAR_region=${{ vars.AWS_REGION }}" >> $GITHUB_ENV
+
+      # Fetch backend config from SSM
+      # - Retrieves global S3/DynamoDB state backend
+      # - Creates backend config file for terraform init
+      - name: Fetch Backend Config
+        run: |
+          BUCKET=$(aws ssm get-parameter --name "/tf/global-infra/backend/bucket" --query "Parameter.Value" --output text)
+          TABLE=$(aws ssm get-parameter --name "/tf/global-infra/backend/table" --query "Parameter.Value" --output text)
+          REGION=$(aws ssm get-parameter --name "/tf/global-infra/backend/region" --query "Parameter.Value" --output text)
+          echo "TF_VAR_state_bucket_name=$BUCKET" >> $GITHUB_ENV
+
+          cat > ${{ env.ENVIRONMENT }}.hcl <<EOF
+          bucket         = "$BUCKET"
+          key            = "${{ env.ENVIRONMENT }}/terraform.tfstate"
+          region         = "$REGION"
+          dynamodb_table = "$TABLE"
+          encrypt        = true
+          EOF
+
+      # Install Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      # Initialize Terraform locally on github runner
+      - name: Terraform Init
+        run: terraform init -backend-config=${{ env.ENVIRONMENT }}.hcl
+
+      # Apply terraform changes to build infrastructure using tfvars for environment
+      - name: Terraform Apply
+        run: terraform apply -var-file="${{ env.ENVIRONMENT }}.tfvars" -var="personal_ip=${{ secrets.PERSONAL_IP }}" -auto-approve

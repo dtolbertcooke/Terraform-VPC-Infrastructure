@@ -1,0 +1,102 @@
+# This workflow bootstraps the global Terraform backend.
+# Steps:
+# ...
+name: Bootstrap Backend Pipeline
+description: Bootstraps the global Terraform backend (S3, DynamoDB, OIDC) and stores backend configuration in AWS SSM Parameter Store.
+on:
+  workflow_dispatch: # Manual trigger so you only run bootstrap when needed
+    inputs:
+      region:
+        description: "Region to deploy to (i.e. us-east-1, eu-west-2, etc.)"
+        type: string
+        required: true
+
+permissions:
+  id-token: write # Required for github oidc authentication with AWS
+  contents: read # Allow repository contents to be checked out
+
+jobs:
+  bootstrap-global:
+    name: Bootstrap Global Terraform Backend
+    runs-on: ubuntu-latest
+    # Only use global-infra environment
+    environment: "global-infra"
+    env:
+      ENVIRONMENT: "global-infra"
+
+    defaults:
+      run:
+        working-directory: infrastructure/backend/global # Keep runs scoped to global backend code
+
+    steps:
+      # 1. Checkout the repo
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Configure AWS credentials using github environment secrets
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ github.event.inputs.region }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      # 3. Install Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.12.2" # Pin to specific version
+
+      # 4. Initialize Terraform locally on github runner
+      - name: Init
+        run: terraform init
+
+      # 5. Apply global backend infrastructure
+      # - Creates S3 bucket for state
+      # - Creates DynamoDB table for state locking
+      # - Creates IAM OIDC provider + IAM policy
+      - name: Apply Global Backend
+        run: terraform apply -var-file=global-infra.tfvars -var="aws_account_id=${{ secrets.AWS_ACCOUNT_ID }}" -auto-approve
+
+      # 6. Export Terraform outputs to JSON file
+      - name: Export Outputs
+        run: terraform output -json > tf_outputs.json
+
+      # 7. Install jq for parsing JSON outputs
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
+      # 8. Store global backend bucket, table and region in SSM Parameter Store
+      # - This lets next workflow get the backend config dynamically
+      - name: Store Backend Config in AWS SSM
+        run: |
+          BUCKET=$(jq -r '.state_bucket_name.value' tf_outputs.json)
+          TABLE=$(jq -r '.dynamodb_table_name.value' tf_outputs.json)
+          REGION=$(jq -r '.region.value' tf_outputs.json)
+
+          aws ssm put-parameter --name "/tf/${{ env.ENVIRONMENT }}/backend/bucket" --value "$BUCKET" --type String --overwrite
+          aws ssm put-parameter --name "/tf/${{ env.ENVIRONMENT }}/backend/table"  --value "$TABLE"  --type String --overwrite
+          aws ssm put-parameter --name "/tf/${{ env.ENVIRONMENT }}/backend/region" --value "$REGION" --type String --overwrite
+
+          echo "BUCKET=$BUCKET" >> $GITHUB_ENV
+          echo "REGION=$REGION" >> $GITHUB_ENV
+          echo "TABLE=$TABLE" >> $GITHUB_ENV
+
+      # 9. Configure remote backend file after resources exist
+      - name: Configure remote backend
+        run: |
+          cat > remote-state.tf <<EOT
+          terraform {
+            backend "s3" {
+              bucket         = "$BUCKET"
+              key            = "global/terraform.tfstate"
+              region         = "$REGION"
+              dynamodb_table = "$TABLE"
+              encrypt        = true
+            }
+          }
+          EOT
+      # 10. Migrate local state to remote backend
+      # - Migrates github runner local state into the new global S3 & DynamoDB backend
+      - name: Migrate global state
+        run: terraform init -migrate-state -force-copy -input=false

@@ -1,0 +1,80 @@
+# This workflow destroys the Terraform cloud infrastructure.
+# Steps:
+# 1. Fetch backend config from SSM
+# 2. Initialize Terraform with remote backend
+# 3. Destroy resources in the specified environment
+name: Destroy Infrastructure Pipeline
+description: Destroys Terraform cloud infrastructure in the specified environment.
+
+on:
+  workflow_dispatch: # Manual trigger so you only run destroy when needed
+    inputs:
+      region:
+        description: "Region to destroy resources in (i.e. us-east-1, eu-west-2, etc.)"
+        type: string
+        required: true
+
+permissions:
+  id-token: write # Required for github oidc authentication with AWS
+  contents: read # Allow repository contents to be checked out
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    # Maps branch to environment (main=dev, test=test, prod=prod)
+    environment: ${{ github.ref == 'refs/heads/main' && 'dev' ||
+      github.ref == 'refs/heads/test' && 'test' ||
+      github.ref == 'refs/heads/prod' && 'prod' }}
+    env:
+      ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'dev' ||
+        github.ref == 'refs/heads/test' && 'test' ||
+        github.ref == 'refs/heads/prod' && 'prod' }}
+
+    defaults:
+      run:
+        working-directory: infrastructure/environments/${{ env.ENVIRONMENT }} # Keep runs scoped to environment code
+
+    steps:
+      # checkout the repo
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # configure aws credentials using github environment secrets
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ github.event.inputs.region }}
+
+      # Fetch backend config from SSM
+      # - Retrieves global S3/DynamoDB state backend
+      # - Creates backend config file for terraform init
+      - name: Fetch Backend Config from SSM
+        run: |
+          BUCKET=$(aws ssm get-parameter --name "/tf/global-infra/backend/bucket" --query "Parameter.Value" --output text --region ${{ github.event.inputs.region }})
+          TABLE=$(aws ssm get-parameter --name "/tf/global-infra/backend/table" --query "Parameter.Value" --output text --region ${{ github.event.inputs.region }})
+          REGION=$(aws ssm get-parameter --name "/tf/global-infra/backend/region" --query "Parameter.Value" --output text --region ${{ github.event.inputs.region }})
+          echo "TF_VAR_state_bucket_name=$BUCKET" >> $GITHUB_ENV
+
+          cat > ${{ env.ENVIRONMENT }}.hcl <<EOF
+          bucket         = "$BUCKET"
+          key            = "${{ env.ENVIRONMENT }}/terraform.tfstate"
+          region         = "$REGION"
+          dynamodb_table = "$TABLE"
+          encrypt        = true
+          EOF
+
+      # install terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.12.2" # Pin to specific version
+
+      # init terraform locally on github runner
+      - name: Terraform Init
+        run: terraform init -backend-config=${{ env.ENVIRONMENT }}.hcl
+
+      # destroy vpc/subnets/SG/etc. config
+      - name: Terraform Destroy
+        run: terraform destroy -auto-approve -var-file="${{ env.ENVIRONMENT }}.tfvars" -var="personal_ip=${{ secrets.PERSONAL_IP }}"

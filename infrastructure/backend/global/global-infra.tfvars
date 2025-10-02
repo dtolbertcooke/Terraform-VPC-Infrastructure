@@ -1,0 +1,5 @@
+region              = "us-east-1"
+state_bucket_name   = "doug-project-bucket"
+dynamodb_table_name = "doug-project-table"
+project_name        = "cloud_engineer_portfolio"
+owner               = "doug"
