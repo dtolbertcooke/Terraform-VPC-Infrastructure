@@ -57,6 +57,7 @@ jobs:
           BUCKET=$(aws ssm get-parameter --name "/tf/global-infra/backend/bucket" --query "Parameter.Value" --output text --region ${{ github.event.inputs.region }})
           TABLE=$(aws ssm get-parameter --name "/tf/global-infra/backend/table" --query "Parameter.Value" --output text --region ${{ github.event.inputs.region }})
           REGION=$(aws ssm get-parameter --name "/tf/global-infra/backend/region" --query "Parameter.Value" --output text --region ${{ github.event.inputs.region }})
+
           echo "TF_VAR_state_bucket_name=$BUCKET" >> $GITHUB_ENV
 
           cat > $ENVIRONMENT.hcl <<EOF
