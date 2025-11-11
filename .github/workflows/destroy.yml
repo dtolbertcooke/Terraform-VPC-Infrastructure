@@ -77,4 +77,4 @@ jobs:
 
       # destroy vpc/subnets/SG/etc. config
       - name: Terraform Destroy
-        run: terraform destroy -auto-approve
+        run: terraform destroy -var="personal_ip=${{ secrets.PERSONAL_IP }}" -auto-approve
