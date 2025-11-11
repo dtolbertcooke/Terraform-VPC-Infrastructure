@@ -19,6 +19,55 @@ module "dynamodb_backend" {
   owner               = var.owner
 }
 
+# create github oidc provider & 3 roles for terraform in all environments (dev, test, prod)
+module "github-oidc-dev" {
+  source  = "terraform-module/github-oidc-provider/aws"
+  version = "2.2.1"
+
+  create_oidc_provider      = true # only create provider once
+  create_oidc_role          = true
+  role_name                 = "github-oidc-role-dev"
+  github_thumbprint         = "6938fd4d98bab03faadb97b34396831e3780aea1"
+  oidc_role_attach_policies = [aws_iam_policy.github_actions_policy.arn] # attach oidc policy created above
+  repositories = [
+    "${var.repository}:environment:dev",
+    "${var.repository}:ref:refs/heads/dev",
+    "${var.repository}:pull_request"
+  ]
+}
+module "github-oidc-test" {
+  source  = "terraform-module/github-oidc-provider/aws"
+  version = "2.2.1"
+
+  create_oidc_provider      = false # ony create provider once
+  create_oidc_role          = true
+  role_name                 = "github-oidc-role-test"
+  github_thumbprint         = "6938fd4d98bab03faadb97b34396831e3780aea1"
+  oidc_role_attach_policies = [aws_iam_policy.github_actions_policy.arn] # attach oidc policy created above
+  repositories = [
+    "${var.repository}:environment:test",
+    "${var.repository}:ref:refs/heads/test",
+    "${var.repository}:pull_request"
+  ]
+  oidc_provider_arn = module.github-oidc-dev.oidc_provider_arn
+}
+module "github-oidc-prod" {
+  source  = "terraform-module/github-oidc-provider/aws"
+  version = "2.2.1"
+
+  create_oidc_provider      = false # only create provider once
+  create_oidc_role          = true
+  role_name                 = "github-oidc-role-prod"
+  github_thumbprint         = "6938fd4d98bab03faadb97b34396831e3780aea1"
+  oidc_role_attach_policies = [aws_iam_policy.github_actions_policy.arn] # attach oidc policy created above
+  repositories = [
+    "${var.repository}:environment:prod",
+    "${var.repository}:ref:refs/heads/prod",
+    "${var.repository}:pull_request"
+  ]
+  oidc_provider_arn = module.github-oidc-dev.oidc_provider_arn
+}
+
 # OIDC policy to be used by all (dev, test, prod) github oidc roles
 resource "aws_iam_policy" "github_actions_policy" {
   name = "github-oidc-role-terraform-policy"
@@ -157,54 +206,5 @@ resource "aws_iam_policy" "github_actions_policy" {
     ]
     }
   )
-}
-
-# create github oidc provider & 3 roles for terraform in all environments (dev, test, prod)
-module "github-oidc-dev" {
-  source  = "terraform-module/github-oidc-provider/aws"
-  version = "2.2.1"
-
-  create_oidc_provider      = true # only create provider once
-  create_oidc_role          = true
-  role_name                 = "github-oidc-role-dev"
-  github_thumbprint         = "6938fd4d98bab03faadb97b34396831e3780aea1"
-  oidc_role_attach_policies = [aws_iam_policy.github_actions_policy.arn] # attach oidc policy created above
-  repositories = [
-    "${var.repository}:environment:dev",
-    "${var.repository}:ref:refs/heads/dev",
-    "${var.repository}:pull_request"
-  ]
-}
-module "github-oidc-test" {
-  source  = "terraform-module/github-oidc-provider/aws"
-  version = "2.2.1"
-
-  create_oidc_provider      = false # ony create provider once
-  create_oidc_role          = true
-  role_name                 = "github-oidc-role-test"
-  github_thumbprint         = "6938fd4d98bab03faadb97b34396831e3780aea1"
-  oidc_role_attach_policies = [aws_iam_policy.github_actions_policy.arn] # attach oidc policy created above
-  repositories = [
-    "${var.repository}:environment:test",
-    "${var.repository}:ref:refs/heads/test",
-    "${var.repository}:pull_request"
-  ]
-  oidc_provider_arn = module.github-oidc-dev.oidc_provider_arn
-}
-module "github-oidc-prod" {
-  source  = "terraform-module/github-oidc-provider/aws"
-  version = "2.2.1"
-
-  create_oidc_provider      = false # only create provider once
-  create_oidc_role          = true
-  role_name                 = "github-oidc-role-prod"
-  github_thumbprint         = "6938fd4d98bab03faadb97b34396831e3780aea1"
-  oidc_role_attach_policies = [aws_iam_policy.github_actions_policy.arn] # attach oidc policy created above
-  repositories = [
-    "${var.repository}:environment:prod",
-    "${var.repository}:ref:refs/heads/prod",
-    "${var.repository}:pull_request"
-  ]
-  oidc_provider_arn = module.github-oidc-dev.oidc_provider_arn
 }
 
