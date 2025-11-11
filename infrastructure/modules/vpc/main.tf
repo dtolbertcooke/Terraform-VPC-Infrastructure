@@ -96,6 +96,7 @@ locals {
 }
 
 # create a VPC module
+# tfsec:ignore:aws-ec2-no-public-ingress-acl
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "5.21.0"
@@ -105,12 +106,11 @@ module "vpc" {
   azs             = var.azs
   public_subnets  = ["172.16.0.0/24", "172.16.1.0/24"]
   private_subnets = ["172.16.2.0/24", "172.16.3.0/24"]
-
+  
   enable_flow_log = true
 
   # enable custom public NACL
   public_dedicated_network_acl = true
-  # tfsec:ignore:aws-ec2-no-public-ingress-acl
   public_inbound_acl_rules = concat(
     local.public_network_acls.public_inbound_https,
     local.public_network_acls.public_inbound_http,
@@ -162,6 +162,7 @@ module "vpc" {
 # Bastion SG: allow SSH from personal IP
 
 # tfsec:ignore:aws-ec2-no-public-ingress-sgr
+# tfsec:ignore:aws-ec2-no-public-egress-sgr
 module "alb_sg" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "5.3.1"
@@ -187,7 +188,6 @@ module "alb_sg" {
     }
   ]
 
-  # tfsec:ignore:aws-ec2-no-public-egress-sgr
   egress_with_cidr_blocks = [
     {
       from_port   = 0
@@ -206,6 +206,7 @@ module "alb_sg" {
   }
 }
 
+# tfsec:ignore:aws-ec2-no-public-egress-sgr
 module "app_sg" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "4.0.0"
@@ -238,7 +239,6 @@ module "app_sg" {
     }
   ]
 
-  # tfsec:ignore:aws-ec2-no-public-egress-sgr
   egress_with_cidr_blocks = [
     {
       from_port   = 0
@@ -292,7 +292,7 @@ module "bastion_host_sg" {
     ManagedBy   = "Terraform"
   }
 }
-
+# tfsec:ignore:aws-ec2-no-public-egress-sgr
 module "db_sg" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "4.0.0"
@@ -311,7 +311,6 @@ module "db_sg" {
     }
   ]
 
-  # tfsec:ignore:aws-ec2-no-public-egress-sgr
   egress_with_cidr_blocks = [
     {
       from_port   = 0
