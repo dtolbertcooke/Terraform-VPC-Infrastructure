@@ -52,7 +52,7 @@ jobs:
       - name: tfsec
         uses: aquasecurity/tfsec-action@v1.0.3 # scan terraform code for security misconfigurations
         with:
-          working_directory: infrastructure
+          working_directory: .
 
   # Second job: Terraform Plan (on PRs)
   plan:
