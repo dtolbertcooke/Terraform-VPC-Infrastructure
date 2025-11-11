@@ -106,7 +106,7 @@ module "vpc" {
   azs             = var.azs
   public_subnets  = ["172.16.0.0/24", "172.16.1.0/24"]
   private_subnets = ["172.16.2.0/24", "172.16.3.0/24"]
-  
+
   enable_flow_log = true
 
   # enable custom public NACL
