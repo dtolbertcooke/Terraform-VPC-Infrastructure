@@ -1,6 +1,5 @@
 # This workflow bootstraps the global Terraform backend.
 # Steps:
-# ...
 name: Bootstrap Backend Pipeline
 description: Bootstraps the global Terraform backend (S3, DynamoDB, OIDC) and stores backend configuration in AWS SSM Parameter Store.
 on:
