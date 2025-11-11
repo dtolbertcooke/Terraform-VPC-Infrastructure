@@ -1,0 +1,19 @@
+# Trivy ignore file for documented security exceptions
+
+# Flow logs ARE enabled through module inputs, but scanners cannot detect module created CloudWatch Log Groups and IAM roles.
+# This is a known false positive with vpc module v5.x.
+AVD-AWS-0178
+
+# Public subnets must allow inbound traffic from the internet (HTTP/HTTPS) for an internet facing architecture.
+# NACLs intentionally allow public ingress on required ports.
+AVD-AWS-0102
+
+# The ALB is intentionally internet facing and requires inbound HTTP/HTTPS from 0.0.0.0/0.
+AVD-AWS-0107
+
+# Outbound access to 0.0.0.0/0 is intentionally required across multiple tiers:
+# - ALB requires unrestricted egress for health checks and AWS service communication.
+# - Application instances need outbound internet for OS updates, package installs, API calls, logging, and monitoring agents.
+# - Database instances require egress for backups, monitoring, time sync (NTP), and AWS control plane communication.
+# These egress rules match AWS best-practice defaults for ALB, EC2, and RDS.
+AVD-AWS-0104
