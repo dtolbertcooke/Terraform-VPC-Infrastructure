@@ -98,12 +98,6 @@ jobs:
           aws-region: "us-east-1" # default region just for the OIDC STS call; set actual region in next step
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-oidc-role-${{ env.ENVIRONMENT }}
 
-      # Export AWS region and TF_VAR_region for terraform resources
-      - name: Export AWS region
-        run: |
-          echo "AWS_REGION=${{ vars.AWS_REGION }}" >> $GITHUB_ENV
-          echo "TF_VAR_region=${{ vars.AWS_REGION }}" >> $GITHUB_ENV
-
       # Fetch backend config from SSM
       # - Retrieves global S3/DynamoDB state backend
       # - Creates backend config file for terraform init
