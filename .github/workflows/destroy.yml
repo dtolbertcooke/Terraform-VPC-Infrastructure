@@ -113,7 +113,7 @@ jobs:
       - name: Disable deletion protection (Global)
         if: ${{ env.ENVIRONMENT == 'global-infra' }}
         working-directory: infrastructure/backend/global
-        run: aws dynamodb update-table --table-name $STATE_TABLE --no-deletion-protection-enabled --region ${{ github.event.inputs.region }}
+        run: aws dynamodb update-table --table-name $TABLE --no-deletion-protection-enabled --region ${{ github.event.inputs.region }}
 
       # 7a. Destroy resources
       - name: Destroy (Global)
