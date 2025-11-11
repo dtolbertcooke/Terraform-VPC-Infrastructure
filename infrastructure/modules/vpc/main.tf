@@ -144,7 +144,7 @@ module "vpc" {
     for az in var.azs : az => { Name = "${var.project_name}-${var.environment}-private-subnet-${az}" }
   }
   # name route tables
-  public_route_table_tags = { Name = "${var.project_name}-${var.environment}-public-rt" }
+  public_route_table_tags  = { Name = "${var.project_name}-${var.environment}-public-rt" }
   private_route_table_tags = { Name = "${var.project_name}-${var.environment}-private-rt" }
   # name IG
   igw_tags = {

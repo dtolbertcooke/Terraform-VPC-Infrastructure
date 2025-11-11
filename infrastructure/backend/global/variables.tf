@@ -32,3 +32,7 @@ variable "aws_account_id" {
   description = "AWS account ID"
   type        = string
 }
+variable "repository" {
+  description = "GitHub repository name"
+  type        = string
+}

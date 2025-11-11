@@ -7,7 +7,7 @@ module "s3-bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "5.4.0"
 
-  bucket = "${var.bucket_name}-${var.environment}-${random_id.random_hex.hex}"
+  bucket        = "${var.bucket_name}-${var.environment}-${random_id.random_hex.hex}"
   force_destroy = false
   versioning = {
     enabled = true

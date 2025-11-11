@@ -129,14 +129,20 @@ resource "aws_iam_policy" "github_actions_policy" {
           "iam:PassRole"
         ],
         "Resource" : [
-          "arn:aws:iam::${var.aws_account_id}:role/github-oidc-role"
+          "arn:aws:iam::${var.aws_account_id}:role/github-oidc-role-dev",
+          "arn:aws:iam::${var.aws_account_id}:role/github-oidc-role-test",
+          "arn:aws:iam::${var.aws_account_id}:role/github-oidc-role-prod"
         ]
       },
       {
         "Sid" : "TerraformAssumeRole",
         "Effect" : "Allow",
         "Action" : ["sts:AssumeRole"],
-        "Resource" : "arn:aws:iam::${var.aws_account_id}:role/github-oidc-role"
+        "Resource" : [
+          "arn:aws:iam::${var.aws_account_id}:role/github-oidc-role-dev",
+          "arn:aws:iam::${var.aws_account_id}:role/github-oidc-role-test",
+          "arn:aws:iam::${var.aws_account_id}:role/github-oidc-role-prod"
+        ]
       },
       {
         Sid    = "AllowSSMGetParameters"
@@ -163,7 +169,11 @@ module "github-oidc-dev" {
   role_name                 = "github-oidc-role-dev"
   github_thumbprint         = "6938fd4d98bab03faadb97b34396831e3780aea1"
   oidc_role_attach_policies = [aws_iam_policy.github_actions_policy.arn] # attach oidc policy created above
-  repositories              = ["dtolbertcooke/Portfolio-Project-1:environment:dev"]
+  repositories = [
+    "${var.repository}:environment:dev",
+    "${var.repository}:ref:refs/heads/dev",
+    "${var.repository}:pull_request"
+  ]
 }
 module "github-oidc-test" {
   source  = "terraform-module/github-oidc-provider/aws"
@@ -174,8 +184,12 @@ module "github-oidc-test" {
   role_name                 = "github-oidc-role-test"
   github_thumbprint         = "6938fd4d98bab03faadb97b34396831e3780aea1"
   oidc_role_attach_policies = [aws_iam_policy.github_actions_policy.arn] # attach oidc policy created above
-  repositories              = ["dtolbertcooke/Portfolio-Project-1:environment:test"]
-  oidc_provider_arn         = module.github-oidc-dev.oidc_provider_arn
+  repositories = [
+    "${var.repository}:environment:test",
+    "${var.repository}:ref:refs/heads/test",
+    "${var.repository}:pull_request"
+  ]
+  oidc_provider_arn = module.github-oidc-dev.oidc_provider_arn
 }
 module "github-oidc-prod" {
   source  = "terraform-module/github-oidc-provider/aws"
@@ -186,7 +200,11 @@ module "github-oidc-prod" {
   role_name                 = "github-oidc-role-prod"
   github_thumbprint         = "6938fd4d98bab03faadb97b34396831e3780aea1"
   oidc_role_attach_policies = [aws_iam_policy.github_actions_policy.arn] # attach oidc policy created above
-  repositories              = ["dtolbertcooke/Portfolio-Project-1:environment:prod"]
-  oidc_provider_arn         = module.github-oidc-dev.oidc_provider_arn
+  repositories = [
+    "${var.repository}:environment:prod",
+    "${var.repository}:ref:refs/heads/prod",
+    "${var.repository}:pull_request"
+  ]
+  oidc_provider_arn = module.github-oidc-dev.oidc_provider_arn
 }
 
