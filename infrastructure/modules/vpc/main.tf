@@ -98,7 +98,7 @@ locals {
 # create a VPC module
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "6.4.0"
+  version = "5.21.0"
 
   name            = "${var.project_name}-${var.environment}-vpc"
   cidr            = var.vpc_cidr
@@ -160,7 +160,7 @@ module "vpc" {
 
 module "alb_sg" {
   source  = "terraform-aws-modules/security-group/aws"
-  version = "4.0.0"
+  version = "5.3.1"
 
   name        = "${var.project_name}-${var.environment}-alb-sg"
   description = "Allow inbound HTTP/HTTPS traffic"
