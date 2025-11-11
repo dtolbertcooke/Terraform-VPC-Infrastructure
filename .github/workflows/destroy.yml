@@ -21,14 +21,14 @@ permissions:
 jobs:
   destroy:
     runs-on: ubuntu-latest
-    # Maps branch to environment (main=dev, test=test, prod=prod)
-    environment: ${{ github.ref == 'refs/heads/main' && 'dev' ||
+    # Maps branch to environment (dev=dev, test=test, main=prod)
+    environment: ${{ github.ref == 'refs/heads/dev' && 'dev' ||
       github.ref == 'refs/heads/test' && 'test' ||
-      github.ref == 'refs/heads/prod' && 'prod' }}
+      github.ref == 'refs/heads/main' && 'prod' }}
     env:
-      ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'dev' ||
+      ENVIRONMENT: ${{ github.ref == 'refs/heads/dev' && 'dev' ||
         github.ref == 'refs/heads/test' && 'test' ||
-        github.ref == 'refs/heads/prod' && 'prod' }}
+        github.ref == 'refs/heads/main' && 'prod' }}
 
     defaults:
       run:
