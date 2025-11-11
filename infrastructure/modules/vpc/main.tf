@@ -107,7 +107,10 @@ module "vpc" {
   public_subnets  = ["172.16.0.0/24", "172.16.1.0/24"]
   private_subnets = ["172.16.2.0/24", "172.16.3.0/24"]
 
-  enable_flow_log = true
+  # Cloudwatch log group and IAM role will be created
+  enable_flow_log                      = true
+  create_flow_log_cloudwatch_log_group = true
+  create_flow_log_cloudwatch_iam_role  = true
 
   # enable custom public NACL
   public_dedicated_network_acl = true
