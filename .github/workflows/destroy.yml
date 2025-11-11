@@ -32,7 +32,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: infrastructure/environments/${{ env.ENVIRONMENT }} # Keep runs scoped to environment code
+        working-directory: infrastructure # Keep runs scoped to environment code
 
     steps:
       # checkout the repo
