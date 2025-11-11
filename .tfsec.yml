@@ -9,7 +9,7 @@ ignore:
   - reason: "The ALB is intentionally internet facing and requires inbound HTTP/HTTPS from 0.0.0.0/0."
 
   - code: aws-ec2-no-public-egress-sgr
-  - reason: >
+  - reason: |
       Outbound access to 0.0.0.0/0 is intentionally required across multiple tiers:
       - ALB requires unrestricted egress for health checks and AWS service communication.
       - Application instances need outbound internet for OS updates, package installs, API calls, logging, and monitoring agents.
