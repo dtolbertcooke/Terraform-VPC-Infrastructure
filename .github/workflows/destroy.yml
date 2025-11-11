@@ -125,9 +125,8 @@ jobs:
       - name: Remove Backend Config from SSM Parameter Store (Global)
         if: ${{ env.ENVIRONMENT == 'global-infra' }}
         run: |
-          aws ssm delete-parameter --name "/tf/global-infra/backend/state-bucket" --region ${{ github.event.inputs.region }} || echo "Parameter already deleted"
-          aws ssm delete-parameter --name "/tf/global-infra/backend/state-table" --region ${{ github.event.inputs.region }} || echo "Parameter already deleted"
-          aws ssm delete-parameter --name "/tf/global-infra/backend/app-table" --region ${{ github.event.inputs.region }} || echo "Parameter already deleted"
+          aws ssm delete-parameter --name "/tf/global-infra/backend/bucket" --region ${{ github.event.inputs.region }} || echo "Parameter already deleted"
+          aws ssm delete-parameter --name "/tf/global-infra/backend/table" --region ${{ github.event.inputs.region }} || echo "Parameter already deleted"
           aws ssm delete-parameter --name "/tf/global-infra/backend/region" --region ${{ github.event.inputs.region }} || echo "Parameter already deleted"
           echo "Removed backend parameters from SSM Parameter Store."
 
