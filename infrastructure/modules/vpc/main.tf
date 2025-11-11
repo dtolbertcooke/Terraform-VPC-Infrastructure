@@ -96,12 +96,6 @@ locals {
 }
 
 # create a VPC module
-# tfsec:ignore:aws-ec2-require-vpc-flow-logs-for-all-vpcs
-# Reason: Flow logs ARE enabled through module inputs, but tfsec cannot detect module created
-#         CloudWatch Log Groups and IAM roles. This is a known false positive with vpc module v5.x.
-# tfsec:ignore:aws-ec2-no-public-ingress-acl
-# Reason: Public subnets must allow inbound traffic from the internet (HTTP/HTTPS) for an
-#         internet-facing architecture. NACLs intentionally allow public ingress on required ports.
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "5.21.0"
@@ -169,11 +163,6 @@ module "vpc" {
 # DB SG: allow only MySQL/Aurora traffic from App SG
 # Bastion SG: allow SSH from personal IP
 
-# tfsec:ignore:aws-ec2-no-public-ingress-sgr
-# Reason: The ALB is intentionally internet facing and requires inbound HTTP/HTTPS from 0.0.0.0/0.
-# tfsec:ignore:aws-ec2-no-public-egress-sgr
-# Reason: ALB outbound access to 0.0.0.0/0 is required for target health checks and interservice
-#         communication. Outbound rules are aligned with AWS ALB defaults.
 module "alb_sg" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "5.3.1"
@@ -217,9 +206,6 @@ module "alb_sg" {
   }
 }
 
-# tfsec:ignore:aws-ec2-no-public-egress-sgr
-# Reason: Application instances require outbound internet access for OS updates, package downloads,
-#         API calls, and logging/monitoring endpoints. Egress is intentionally unrestricted.
 module "app_sg" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "4.0.0"
@@ -307,9 +293,7 @@ module "bastion_host_sg" {
     ManagedBy   = "Terraform"
   }
 }
-# tfsec:ignore:aws-ec2-no-public-egress-sgr
-# Reason: DB instances require outbound traffic for logging, monitoring, backups, time sync,
-#         and AWS control plane communication. Egress 0.0.0.0/0 is a standard RDS requirement.
+
 module "db_sg" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "4.0.0"
