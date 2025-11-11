@@ -57,9 +57,9 @@ jobs:
           REGION=$(aws ssm get-parameter --name "/tf/global-infra/backend/region" --query "Parameter.Value" --output text --region ${{ github.event.inputs.region }})
           echo "TF_VAR_state_bucket_name=$BUCKET" >> $GITHUB_ENV
 
-          cat > ${{ env.ENVIRONMENT }}.hcl <<EOF
+          cat > $ENVIRONMENT.hcl <<EOF
           bucket         = "$BUCKET"
-          key            = "${{ env.ENVIRONMENT }}/terraform.tfstate"
+          key            = "$ENVIRONMENT/terraform.tfstate"
           region         = "$REGION"
           dynamodb_table = "$TABLE"
           encrypt        = true
