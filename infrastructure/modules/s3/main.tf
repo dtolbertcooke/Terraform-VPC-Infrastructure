@@ -8,7 +8,7 @@ module "s3-bucket" {
   version = "5.4.0"
 
   bucket        = "${var.bucket_name}-${var.environment}-${random_id.random_hex.hex}"
-  force_destroy = false
+  force_destroy = true
   versioning = {
     enabled = true
   }
