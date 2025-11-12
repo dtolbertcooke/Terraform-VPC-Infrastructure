@@ -210,7 +210,8 @@ resource "aws_iam_policy" "github_actions_policy" {
           "logs:CreateLogGroup",
           "logs:DescribeLogGroups",
           "logs:DescribeLogStreams",
-          "logs:ListTagsLogGroup"
+          "logs:ListTagsLogGroup",
+          "logs:ListTagsForResource"
         ],
         "Resource" : "*"
       },
