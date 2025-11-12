@@ -60,6 +60,10 @@ jobs:
     needs: [tests] # only run if tests pass
     if: github.event_name == 'pull_request' # only run on PRs
 
+    # necessary to set environment per branch for secret access
+    environment: ${{ github.base_ref == 'dev' && 'dev' ||
+      github.base_ref == 'test' && 'test' ||
+      github.base_ref == 'main' && 'prod' }}
     env:
       ENVIRONMENT: ${{ github.base_ref == 'dev' && 'dev' ||
         github.base_ref == 'test' && 'test' ||
