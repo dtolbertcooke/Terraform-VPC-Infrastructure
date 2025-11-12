@@ -257,7 +257,6 @@ resource "aws_iam_policy" "github_actions_policy" {
           "iam:ListPolicies",
           "iam:ListPolicyVersions",
           "iam:TagPolicy"
-
         ],
         "Resource" : "arn:aws:iam::${var.aws_account_id}:policy/vpc-flow-log-to-cloudwatch-*"
       }
