@@ -121,15 +121,14 @@ jobs:
         working-directory: infrastructure/backend/global
         run: terraform destroy -var-file=${{ env.ENVIRONMENT }}.tfvars -var="aws_account_id=${{ secrets.AWS_ACCOUNT_ID }}" -auto-approve -lock=false # -lock=false to avoid locking issues on destroy
 
-      # uncomment after testing
-      # # 8. Remove backend config from SSM Parameter store (Global)
-      # - name: Remove Backend Config from SSM Parameter Store (Global)
-      #   if: ${{ env.ENVIRONMENT == 'global-infra' }}
-      #   run: |
-      #     aws ssm delete-parameter --name "/tf/global-infra/backend/bucket" --region ${{ github.event.inputs.region }} || echo "bucket param already deleted"
-      #     aws ssm delete-parameter --name "/tf/global-infra/backend/table" --region ${{ github.event.inputs.region }} || echo "table param already deleted"
-      #     aws ssm delete-parameter --name "/tf/global-infra/backend/region" --region ${{ github.event.inputs.region }} || echo "region param already deleted"
-      #     echo "Removed backend parameters from SSM Parameter Store."
+      # 8. Remove backend config from SSM Parameter store (Global)
+      - name: Remove Backend Config from SSM Parameter Store (Global)
+        if: ${{ env.ENVIRONMENT == 'global-infra' }}
+        run: |
+          aws ssm delete-parameter --name "/tf/global-infra/backend/bucket" --region ${{ github.event.inputs.region }} || echo "bucket param already deleted"
+          aws ssm delete-parameter --name "/tf/global-infra/backend/table" --region ${{ github.event.inputs.region }} || echo "table param already deleted"
+          aws ssm delete-parameter --name "/tf/global-infra/backend/region" --region ${{ github.event.inputs.region }} || echo "region param already deleted"
+          echo "Removed backend parameters from SSM Parameter Store."
 
       # init terraform locally on github runner
       - name: Terraform Init (Environment)
