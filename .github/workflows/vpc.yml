@@ -64,7 +64,6 @@ jobs:
       ENVIRONMENT: ${{ github.base_ref == 'dev' && 'dev' ||
         github.base_ref == 'test' && 'test' ||
         github.base_ref == 'main' && 'prod' }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     defaults:
       run:
