@@ -60,14 +60,10 @@ jobs:
     needs: [tests] # only run if tests pass
     if: github.event_name == 'pull_request' # only run on PRs
 
-    # necessary to set environment per branch
-    environment: ${{ github.ref == 'refs/heads/dev' && 'dev' ||
-      github.ref == 'refs/heads/test' && 'test' ||
-      github.ref == 'refs/heads/main' && 'prod' }}
     env:
-      ENVIRONMENT: ${{ github.ref == 'refs/heads/dev' && 'dev' ||
-        github.ref == 'refs/heads/test' && 'test' ||
-        github.ref == 'refs/heads/main' && 'prod' }}
+      ENVIRONMENT: ${{ github.base_ref == 'dev' && 'dev' ||
+        github.base_ref == 'test' && 'test' ||
+        github.base_ref == 'main' && 'prod' }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     defaults:
