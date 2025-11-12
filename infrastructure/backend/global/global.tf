@@ -204,13 +204,21 @@ resource "aws_iam_policy" "github_actions_policy" {
         ]
       },
       {
-        "Sid" : "AllowVPCFlowLogsCloudWatchAccess",
+        "Sid" : "VPCFlowLogsCloudWatchGlobal",
         "Effect" : "Allow",
         "Action" : [
           "logs:CreateLogGroup",
-          "logs:CreateLogStream",
           "logs:DescribeLogGroups",
           "logs:DescribeLogStreams",
+          "logs:ListTagsLogGroup"
+        ],
+        "Resource" : "*"
+      },
+      {
+        "Sid" : "VPCFlowLogsCloudWatchScoped",
+        "Effect" : "Allow",
+        "Action" : [
+          "logs:CreateLogStream",
           "logs:PutLogEvents",
           "logs:PutRetentionPolicy",
           "logs:TagResource"
@@ -218,16 +226,19 @@ resource "aws_iam_policy" "github_actions_policy" {
         "Resource" : "arn:aws:logs:${var.region}:${var.aws_account_id}:log-group:/aws/vpc-flow-log/*:*"
       },
       {
-        "Sid" : "AllowVPCFlowLogRoleManagement",
+        "Sid" : "VPCFlowLogRoleManagement",
         "Effect" : "Allow",
         "Action" : [
           "iam:CreateRole",
           "iam:DeleteRole",
           "iam:AttachRolePolicy",
           "iam:PutRolePolicy",
+          "iam:GetRole",
+          "iam:GetRolePolicy",
+          "iam:ListRolePolicies",
+          "iam:ListAttachedRolePolicies",
           "iam:PassRole",
           "iam:TagRole",
-          "iam:GetRole"
         ],
         "Resource" : "arn:aws:iam::${var.aws_account_id}:role/vpc-flow-log-role-*"
       }
