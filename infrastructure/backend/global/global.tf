@@ -156,7 +156,10 @@ resource "aws_iam_policy" "github_actions_policy" {
           "ec2:DescribeNetworkInterfaces",
           "ec2:DisassociateAddress",
           "ec2:ReleaseAddress",
-          "ec2:DescribeAddressesAttribute"
+          "ec2:DescribeAddressesAttribute",
+          "ec2:CreateFlowLogs",
+          "ec2:DeleteFlowLogs",
+          "ec2:DescribeFlowLogs"
         ],
         "Resource" : "*"
       },
@@ -202,6 +205,60 @@ resource "aws_iam_policy" "github_actions_policy" {
           "arn:aws:ssm:${var.region}:${var.aws_account_id}:parameter/tf/*/backend/region",
           "arn:aws:ssm:${var.region}:${var.aws_account_id}:parameter/tf/*/backend/table"
         ]
+      },
+      {
+        "Sid" : "VPCFlowLogsCloudWatchGlobal",
+        "Effect" : "Allow",
+        "Action" : [
+          "logs:CreateLogGroup",
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams",
+          "logs:ListTagsLogGroup",
+          "logs:ListTagsForResource"
+        ],
+        "Resource" : "*"
+      },
+      {
+        "Sid" : "VPCFlowLogsCloudWatchScoped",
+        "Effect" : "Allow",
+        "Action" : [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:PutRetentionPolicy",
+          "logs:TagResource"
+        ],
+        "Resource" : "arn:aws:logs:${var.region}:${var.aws_account_id}:log-group:/aws/vpc-flow-log/*:*"
+      },
+      {
+        "Sid" : "VPCFlowLogRoleManagement",
+        "Effect" : "Allow",
+        "Action" : [
+          "iam:CreateRole",
+          "iam:DeleteRole",
+          "iam:AttachRolePolicy",
+          "iam:PutRolePolicy",
+          "iam:GetRole",
+          "iam:GetRolePolicy",
+          "iam:ListRolePolicies",
+          "iam:ListAttachedRolePolicies",
+          "iam:PassRole",
+          "iam:TagRole",
+        ],
+        "Resource" : "arn:aws:iam::${var.aws_account_id}:role/vpc-flow-log-role-*"
+      },
+      {
+        "Sid" : "AllowVPCFlowLogPolicyManagement",
+        "Effect" : "Allow",
+        "Action" : [
+          "iam:CreatePolicy",
+          "iam:DeletePolicy",
+          "iam:GetPolicy",
+          "iam:GetPolicyVersion",
+          "iam:ListPolicies",
+          "iam:ListPolicyVersions",
+          "iam:TagPolicy"
+        ],
+        "Resource" : "arn:aws:iam::${var.aws_account_id}:policy/vpc-flow-log-to-cloudwatch-*"
       }
     ]
     }

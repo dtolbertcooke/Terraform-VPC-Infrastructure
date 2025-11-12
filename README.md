@@ -80,7 +80,7 @@ See [`Architecture.md`](./Architecture.md) for diagrams and details.
 
 - AWS Account with permissions to create IAM, S3, DynamoDB, VPC, subnets, gateways, and security rules.
 - Terraform v1.12.2+
-- Repo-level secrets for GitHub Actions
+- Repo level secrets for GitHub Actions
 
 ## Setup
 
