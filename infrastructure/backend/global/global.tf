@@ -253,7 +253,9 @@ resource "aws_iam_policy" "github_actions_policy" {
           "iam:CreatePolicy",
           "iam:DeletePolicy",
           "iam:GetPolicy",
+          "iam:GetPolicyVersion",
           "iam:ListPolicies",
+          "iam:ListPolicyVersions",
           "iam:TagPolicy"
 
         ],
