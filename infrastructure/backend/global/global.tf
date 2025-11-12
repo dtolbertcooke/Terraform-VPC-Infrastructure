@@ -156,7 +156,10 @@ resource "aws_iam_policy" "github_actions_policy" {
           "ec2:DescribeNetworkInterfaces",
           "ec2:DisassociateAddress",
           "ec2:ReleaseAddress",
-          "ec2:DescribeAddressesAttribute"
+          "ec2:DescribeAddressesAttribute",
+          "ec2:CreateFlowLogs",
+          "ec2:DeleteFlowLogs",
+          "ec2:DescribeFlowLogs"
         ],
         "Resource" : "*"
       },
@@ -242,6 +245,17 @@ resource "aws_iam_policy" "github_actions_policy" {
           "iam:TagRole",
         ],
         "Resource" : "arn:aws:iam::${var.aws_account_id}:role/vpc-flow-log-role-*"
+      },
+      {
+        "Sid" : "AllowVPCFlowLogPolicyManagement",
+        "Effect" : "Allow",
+        "Action" : [
+          "iam:CreatePolicy",
+          "iam:DeletePolicy",
+          "iam:GetPolicy",
+          "iam:ListPolicies"
+        ],
+        "Resource" : "arn:aws:iam::${var.aws_account_id}:policy/vpc-flow-log-to-cloudwatch-*"
       }
     ]
     }
