@@ -103,6 +103,8 @@ jobs:
       # Install Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.12.2" # Pin to specific version
 
       # Initialize Terraform locally on github runner
       - name: Terraform Init
@@ -111,7 +113,7 @@ jobs:
       # Plan terraform changes and output to file
       - name: Terraform Plan
         id: plan
-        run: terraform plan -var-file="${{ env.ENVIRONMENT }}.tfvars" -var="aws_account_id=${{ secrets.AWS_ACCOUNT_ID }}" -out=tfplan
+        run: terraform plan -var="aws_account_id=${{ secrets.AWS_ACCOUNT_ID }}" -out=tfplan
 
       # Convert plan to text for PR comment
       - name: Convert plan to text
