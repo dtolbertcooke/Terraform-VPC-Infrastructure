@@ -68,6 +68,7 @@ jobs:
       ENVIRONMENT: ${{ github.ref == 'refs/heads/dev' && 'dev' ||
         github.ref == 'refs/heads/test' && 'test' ||
         github.ref == 'refs/heads/main' && 'prod' }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     defaults:
       run:
@@ -116,11 +117,15 @@ jobs:
         id: plan
         run: terraform plan -var-file="${{ env.ENVIRONMENT }}.tfvars" -var="aws_account_id=${{ secrets.AWS_ACCOUNT_ID }}" -out=tfplan
 
+      # Convert plan to text for PR comment
+      - name: Convert plan to text
+        run: terraform show -no-color tfplan > tfplan.txt
+
       # Comment PR with tfplan output
       - name: Comment PR with Plan
         uses: marocchino/sticky-pull-request-comment@v2
         with:
-          path: tfplan
+          path: infrastructure/tfplan.txt
 
   # Third job: Terraform Apply (on pushes to dev/test/main)
   apply:
@@ -136,6 +141,7 @@ jobs:
       ENVIRONMENT: ${{ github.ref == 'refs/heads/dev' && 'dev' ||
         github.ref == 'refs/heads/test' && 'test' ||
         github.ref == 'refs/heads/main' && 'prod' }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     defaults:
       run:
