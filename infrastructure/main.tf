@@ -1,5 +1,9 @@
-module "prod_vpc" {
-  source       = "../../modules/vpc"
+locals {
+  config = yamldecode(file("${path.module}/env/${var.environment}.yml"))
+}
+
+module "vpc" {
+  source       = "./modules/vpc"
   project_name = var.project_name
   environment  = var.environment
   vpc_cidr     = var.vpc_cidr

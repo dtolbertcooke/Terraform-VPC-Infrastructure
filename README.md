@@ -1,6 +1,6 @@
 # VPC (Terraform + GitHub Actions + AWS)
 
-This project demonstrates how to build and deploy a secure, production-ready VPC on AWS using Infrastructure as Code (Terraform) and a CI/CD pipeline (GitHub Actions with OIDC).
+This project demonstrates how to build and deploy a secure, production ready VPC on AWS using Infrastructure as Code (Terraform) and a CI/CD pipeline (GitHub Actions with OIDC).
 
 The VPC includes public and private subnets, Internet Gateway (IGW), NAT Gateway, Network ACLs, Security Groups, and proper routing to support multi-tier applications.
 
@@ -80,7 +80,7 @@ See [`Architecture.md`](./Architecture.md) for diagrams and details.
 
 - AWS Account with permissions to create IAM, S3, DynamoDB, VPC, subnets, gateways, and security rules.
 - Terraform v1.12.2+
-- Repo-level secrets for GitHub Actions
+- Repo level secrets for GitHub Actions
 
 ## Setup
 
@@ -104,11 +104,11 @@ See [`Architecture.md`](./Architecture.md) for diagrams and details.
 1. Manually run global-bootstrap.yml **once** to initialize backend.
 2. Build terraform network infrastructure for vpc
 
-- On push to main:
+- On push to dev:
 
   - GitHub Actions authenticates to AWS via OIDC
   - Runs tests on terraform configuration
-  - On approval (global-infra / prod branches) → terraform apply
+  - On approval (global-infra / main branch) → terraform apply
 
 - On pull requests:
 

@@ -42,7 +42,7 @@ locals {
         rule_action = "deny"
         from_port   = 0
         to_port     = 0
-        protocol    = "-1"
+        protocol    = "tcp"
         cidr_block  = "0.0.0.0/0"
       }
     ]
@@ -53,7 +53,7 @@ locals {
         rule_action = "allow"
         from_port   = 0
         to_port     = 0
-        protocol    = "-1"
+        protocol    = "tcp"
         cidr_block  = "0.0.0.0/0"
       }
     ]
@@ -66,7 +66,7 @@ locals {
         rule_action = "allow"
         from_port   = 0
         to_port     = 0
-        protocol    = "-1"
+        protocol    = "tcp"
         cidr_block  = var.vpc_cidr
       }
     ],
@@ -77,7 +77,7 @@ locals {
         rule_action = "deny"
         from_port   = 0
         to_port     = 0
-        protocol    = "-1"
+        protocol    = "tcp"
         cidr_block  = "0.0.0.0/0"
       }
     ],
@@ -88,7 +88,7 @@ locals {
         rule_action = "allow"
         from_port   = 0
         to_port     = 0
-        protocol    = "-1"
+        protocol    = "tcp"
         cidr_block  = "0.0.0.0/0"
       }
     ]
@@ -98,13 +98,18 @@ locals {
 # create a VPC module
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "6.4.0"
+  version = "5.21.0"
 
   name            = "${var.project_name}-${var.environment}-vpc"
   cidr            = var.vpc_cidr
   azs             = var.azs
   public_subnets  = ["172.16.0.0/24", "172.16.1.0/24"]
   private_subnets = ["172.16.2.0/24", "172.16.3.0/24"]
+
+  # Cloudwatch log group and IAM role will be created
+  enable_flow_log                      = true
+  create_flow_log_cloudwatch_log_group = true
+  create_flow_log_cloudwatch_iam_role  = true
 
   # enable custom public NACL
   public_dedicated_network_acl = true
@@ -144,7 +149,7 @@ module "vpc" {
     for az in var.azs : az => { Name = "${var.project_name}-${var.environment}-private-subnet-${az}" }
   }
   # name route tables
-  public_route_table_tags = { Name = "${var.project_name}-${var.environment}-public-rt" }
+  public_route_table_tags  = { Name = "${var.project_name}-${var.environment}-public-rt" }
   private_route_table_tags = { Name = "${var.project_name}-${var.environment}-private-rt" }
   # name IG
   igw_tags = {
@@ -160,7 +165,7 @@ module "vpc" {
 
 module "alb_sg" {
   source  = "terraform-aws-modules/security-group/aws"
-  version = "4.0.0"
+  version = "5.3.1"
 
   name        = "${var.project_name}-${var.environment}-alb-sg"
   description = "Allow inbound HTTP/HTTPS traffic"
@@ -187,7 +192,7 @@ module "alb_sg" {
     {
       from_port   = 0
       to_port     = 0
-      protocol    = "-1"
+      protocol    = "tcp"
       description = "Allow all outbound traffic"
       cidr_blocks = "0.0.0.0/0"
     }
@@ -237,7 +242,7 @@ module "app_sg" {
     {
       from_port   = 0
       to_port     = 0
-      protocol    = "-1"
+      protocol    = "tcp"
       description = "Allow all outbound traffic"
       cidr_blocks = "0.0.0.0/0"
     }
@@ -251,6 +256,8 @@ module "app_sg" {
   }
 }
 
+# Note: Bastion host ingress is restricted to a single trusted IP (var.personal_ip). Outbound SSH
+#       access to application tier is intentional for administrative access.
 module "bastion_host_sg" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "4.0.0"
@@ -309,7 +316,7 @@ module "db_sg" {
     {
       from_port   = 0
       to_port     = 0
-      protocol    = "-1"
+      protocol    = "tcp"
       description = "Allow all outbound traffic"
       cidr_blocks = "0.0.0.0/0"
     }

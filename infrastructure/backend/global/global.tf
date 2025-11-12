@@ -19,6 +19,55 @@ module "dynamodb_backend" {
   owner               = var.owner
 }
 
+# create github oidc provider & 3 roles for terraform in all environments (dev, test, prod)
+module "github-oidc-dev" {
+  source  = "terraform-module/github-oidc-provider/aws"
+  version = "2.2.1"
+
+  create_oidc_provider      = true # only create provider once
+  create_oidc_role          = true
+  role_name                 = "github-oidc-role-dev"
+  github_thumbprint         = "6938fd4d98bab03faadb97b34396831e3780aea1"
+  oidc_role_attach_policies = [aws_iam_policy.github_actions_policy.arn] # attach oidc policy created above
+  repositories = [
+    "${var.repository}:environment:dev",
+    "${var.repository}:ref:refs/heads/dev",
+    "${var.repository}:pull_request"
+  ]
+}
+module "github-oidc-test" {
+  source  = "terraform-module/github-oidc-provider/aws"
+  version = "2.2.1"
+
+  create_oidc_provider      = false # ony create provider once
+  create_oidc_role          = true
+  role_name                 = "github-oidc-role-test"
+  github_thumbprint         = "6938fd4d98bab03faadb97b34396831e3780aea1"
+  oidc_role_attach_policies = [aws_iam_policy.github_actions_policy.arn] # attach oidc policy created above
+  repositories = [
+    "${var.repository}:environment:test",
+    "${var.repository}:ref:refs/heads/test",
+    "${var.repository}:pull_request"
+  ]
+  oidc_provider_arn = module.github-oidc-dev.oidc_provider_arn
+}
+module "github-oidc-prod" {
+  source  = "terraform-module/github-oidc-provider/aws"
+  version = "2.2.1"
+
+  create_oidc_provider      = false # only create provider once
+  create_oidc_role          = true
+  role_name                 = "github-oidc-role-prod"
+  github_thumbprint         = "6938fd4d98bab03faadb97b34396831e3780aea1"
+  oidc_role_attach_policies = [aws_iam_policy.github_actions_policy.arn] # attach oidc policy created above
+  repositories = [
+    "${var.repository}:environment:prod",
+    "${var.repository}:ref:refs/heads/prod",
+    "${var.repository}:pull_request"
+  ]
+  oidc_provider_arn = module.github-oidc-dev.oidc_provider_arn
+}
+
 # OIDC policy to be used by all (dev, test, prod) github oidc roles
 resource "aws_iam_policy" "github_actions_policy" {
   name = "github-oidc-role-terraform-policy"
@@ -107,7 +156,10 @@ resource "aws_iam_policy" "github_actions_policy" {
           "ec2:DescribeNetworkInterfaces",
           "ec2:DisassociateAddress",
           "ec2:ReleaseAddress",
-          "ec2:DescribeAddressesAttribute"
+          "ec2:DescribeAddressesAttribute",
+          "ec2:CreateFlowLogs",
+          "ec2:DeleteFlowLogs",
+          "ec2:DescribeFlowLogs"
         ],
         "Resource" : "*"
       },
@@ -129,14 +181,20 @@ resource "aws_iam_policy" "github_actions_policy" {
           "iam:PassRole"
         ],
         "Resource" : [
-          "arn:aws:iam::${var.aws_account_id}:role/github-oidc-role"
+          "arn:aws:iam::${var.aws_account_id}:role/github-oidc-role-dev",
+          "arn:aws:iam::${var.aws_account_id}:role/github-oidc-role-test",
+          "arn:aws:iam::${var.aws_account_id}:role/github-oidc-role-prod"
         ]
       },
       {
         "Sid" : "TerraformAssumeRole",
         "Effect" : "Allow",
         "Action" : ["sts:AssumeRole"],
-        "Resource" : "arn:aws:iam::${var.aws_account_id}:role/github-oidc-role"
+        "Resource" : [
+          "arn:aws:iam::${var.aws_account_id}:role/github-oidc-role-dev",
+          "arn:aws:iam::${var.aws_account_id}:role/github-oidc-role-test",
+          "arn:aws:iam::${var.aws_account_id}:role/github-oidc-role-prod"
+        ]
       },
       {
         Sid    = "AllowSSMGetParameters"
@@ -147,46 +205,63 @@ resource "aws_iam_policy" "github_actions_policy" {
           "arn:aws:ssm:${var.region}:${var.aws_account_id}:parameter/tf/*/backend/region",
           "arn:aws:ssm:${var.region}:${var.aws_account_id}:parameter/tf/*/backend/table"
         ]
+      },
+      {
+        "Sid" : "VPCFlowLogsCloudWatchGlobal",
+        "Effect" : "Allow",
+        "Action" : [
+          "logs:CreateLogGroup",
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams",
+          "logs:ListTagsLogGroup",
+          "logs:ListTagsForResource"
+        ],
+        "Resource" : "*"
+      },
+      {
+        "Sid" : "VPCFlowLogsCloudWatchScoped",
+        "Effect" : "Allow",
+        "Action" : [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:PutRetentionPolicy",
+          "logs:TagResource"
+        ],
+        "Resource" : "arn:aws:logs:${var.region}:${var.aws_account_id}:log-group:/aws/vpc-flow-log/*:*"
+      },
+      {
+        "Sid" : "VPCFlowLogRoleManagement",
+        "Effect" : "Allow",
+        "Action" : [
+          "iam:CreateRole",
+          "iam:DeleteRole",
+          "iam:AttachRolePolicy",
+          "iam:PutRolePolicy",
+          "iam:GetRole",
+          "iam:GetRolePolicy",
+          "iam:ListRolePolicies",
+          "iam:ListAttachedRolePolicies",
+          "iam:PassRole",
+          "iam:TagRole",
+        ],
+        "Resource" : "arn:aws:iam::${var.aws_account_id}:role/vpc-flow-log-role-*"
+      },
+      {
+        "Sid" : "AllowVPCFlowLogPolicyManagement",
+        "Effect" : "Allow",
+        "Action" : [
+          "iam:CreatePolicy",
+          "iam:DeletePolicy",
+          "iam:GetPolicy",
+          "iam:GetPolicyVersion",
+          "iam:ListPolicies",
+          "iam:ListPolicyVersions",
+          "iam:TagPolicy"
+        ],
+        "Resource" : "arn:aws:iam::${var.aws_account_id}:policy/vpc-flow-log-to-cloudwatch-*"
       }
     ]
     }
   )
-}
-
-# create github oidc provider & 3 roles for terraform in all environments (dev, test, prod)
-module "github-oidc-dev" {
-  source  = "terraform-module/github-oidc-provider/aws"
-  version = "2.2.1"
-
-  create_oidc_provider      = true # only create provider once
-  create_oidc_role          = true
-  role_name                 = "github-oidc-role-dev"
-  github_thumbprint         = "6938fd4d98bab03faadb97b34396831e3780aea1"
-  oidc_role_attach_policies = [aws_iam_policy.github_actions_policy.arn] # attach oidc policy created above
-  repositories              = ["dtolbertcooke/Portfolio-Project-1:environment:dev"]
-}
-module "github-oidc-test" {
-  source  = "terraform-module/github-oidc-provider/aws"
-  version = "2.2.1"
-
-  create_oidc_provider      = false # ony create provider once
-  create_oidc_role          = true
-  role_name                 = "github-oidc-role-test"
-  github_thumbprint         = "6938fd4d98bab03faadb97b34396831e3780aea1"
-  oidc_role_attach_policies = [aws_iam_policy.github_actions_policy.arn] # attach oidc policy created above
-  repositories              = ["dtolbertcooke/Portfolio-Project-1:environment:test"]
-  oidc_provider_arn         = module.github-oidc-dev.oidc_provider_arn
-}
-module "github-oidc-prod" {
-  source  = "terraform-module/github-oidc-provider/aws"
-  version = "2.2.1"
-
-  create_oidc_provider      = false # only create provider once
-  create_oidc_role          = true
-  role_name                 = "github-oidc-role-prod"
-  github_thumbprint         = "6938fd4d98bab03faadb97b34396831e3780aea1"
-  oidc_role_attach_policies = [aws_iam_policy.github_actions_policy.arn] # attach oidc policy created above
-  repositories              = ["dtolbertcooke/Portfolio-Project-1:environment:prod"]
-  oidc_provider_arn         = module.github-oidc-dev.oidc_provider_arn
 }
 

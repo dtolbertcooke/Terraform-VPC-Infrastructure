@@ -1,6 +1,5 @@
 # This workflow bootstraps the global Terraform backend.
 # Steps:
-# ...
 name: Bootstrap Backend Pipeline
 description: Bootstraps the global Terraform backend (S3, DynamoDB, OIDC) and stores backend configuration in AWS SSM Parameter Store.
 on:
@@ -17,6 +16,7 @@ permissions:
 
 jobs:
   bootstrap-global:
+    if: github.ref == 'refs/heads/global-infra' # Only run from global-infra branch
     name: Bootstrap Global Terraform Backend
     runs-on: ubuntu-latest
     # Only use global-infra environment
@@ -48,7 +48,7 @@ jobs:
           terraform_version: "1.12.2" # Pin to specific version
 
       # 4. Initialize Terraform locally on github runner
-      - name: Init
+      - name: Terraform Init
         run: terraform init
 
       # 5. Apply global backend infrastructure
@@ -89,7 +89,7 @@ jobs:
           terraform {
             backend "s3" {
               bucket         = "$BUCKET"
-              key            = "global/terraform.tfstate"
+              key            = "$ENVIRONMENT/terraform.tfstate"
               region         = "$REGION"
               dynamodb_table = "$TABLE"
               encrypt        = true
