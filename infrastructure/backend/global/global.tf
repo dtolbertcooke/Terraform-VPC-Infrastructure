@@ -212,10 +212,10 @@ resource "aws_iam_policy" "github_actions_policy" {
           "logs:DescribeLogGroups",
           "logs:DescribeLogStreams",
           "logs:PutLogEvents",
-          "logs:PutRetentionPolicy"
+          "logs:PutRetentionPolicy",
+          "logs:TagResource"
         ],
         "Resource" : "arn:aws:logs:${var.region}:${var.aws_account_id}:log-group:/aws/vpc-flow-log/*:*"
-
       },
       {
         "Sid" : "AllowVPCFlowLogRoleManagement",
@@ -226,7 +226,8 @@ resource "aws_iam_policy" "github_actions_policy" {
           "iam:AttachRolePolicy",
           "iam:PutRolePolicy",
           "iam:PassRole",
-          "iam:TagRole"
+          "iam:TagRole",
+          "iam:GetRole"
         ],
         "Resource" : "arn:aws:iam::${var.aws_account_id}:role/vpc-flow-log-role-*"
       }
