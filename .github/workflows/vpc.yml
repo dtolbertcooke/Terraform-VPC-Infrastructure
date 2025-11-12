@@ -113,7 +113,7 @@ jobs:
       # Plan terraform changes and output to file
       - name: Terraform Plan
         id: plan
-        run: terraform plan -var="aws_account_id=${{ secrets.AWS_ACCOUNT_ID }}" -out=tfplan
+        run: terraform plan -var="personal_ip=${{ secrets.PERSONAL_IP }}" -var="aws_account_id=${{ secrets.AWS_ACCOUNT_ID }}" -out=tfplan
 
       # Convert plan to text for PR comment
       - name: Convert plan to text
