@@ -5,7 +5,7 @@ locals {
 module "vpc" {
   source       = "./modules/vpc"
   project_name = local.config.project_name
-  environment  = local.config.environment
+  environment  = var.environment
   vpc_cidr     = local.config.vpc_cidr
   azs          = local.config.azs
   owner        = local.config.owner
