@@ -57,7 +57,7 @@ locals {
       }
     ]
   }
-  
+
   private_network_acls = {
     private_inbound_all = [
       {
