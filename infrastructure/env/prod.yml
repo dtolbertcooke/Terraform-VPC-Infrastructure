@@ -1,5 +1,4 @@
 project_name: "cloud_engineer_portfolio"
-environment: "prod"
 vpc_cidr: "172.18.0.0/16"
 azs: ["us-east-1a", "us-east-1b"]
 owner: "doug"

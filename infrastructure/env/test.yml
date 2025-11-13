@@ -1,5 +1,4 @@
 project_name: "test"
-environment: "test"
 vpc_cidr: "172.17.0.0/16"
 azs: ["us-east-1a", "us-east-1b"]
 owner: "test"
