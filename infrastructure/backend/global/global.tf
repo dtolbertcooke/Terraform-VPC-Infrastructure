@@ -227,7 +227,7 @@ resource "aws_iam_policy" "github_actions_policy" {
           "logs:PutRetentionPolicy",
           "logs:TagResource"
         ],
-        "Resource" : "arn:aws:logs:${var.region}:${var.aws_account_id}:log-group:/aws/vpc-flow-log/*:*"
+        "Resource" : "arn:aws:logs:${var.region}:${var.aws_account_id}:log-group:/aws/vpc-flow-log/*"
       },
       {
         "Sid" : "VPCFlowLogRoleManagement",
