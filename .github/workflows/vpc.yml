@@ -112,7 +112,7 @@ jobs:
       # Plan terraform changes and output to file
       - name: Terraform Plan
         id: plan
-        run: terraform plan -var="personal_ip=${{ secrets.PERSONAL_IP }}" -out=tfplan
+        run: terraform plan -var="personal_ip=${{ secrets.PERSONAL_IP }}" -var="environment=${{ env.ENVIRONMENT }}" -out=tfplan
 
       # Convert plan to text for PR comment
       - name: Convert plan to text
