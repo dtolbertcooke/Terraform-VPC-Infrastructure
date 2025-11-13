@@ -10,7 +10,7 @@ variable "region" {
 variable "environment" {
   description = "Environment tag for resources"
   type        = string
-  default     = "dev"
+  # default     = "dev"
 }
 variable "project_name" {
   description = "Name of the project"
