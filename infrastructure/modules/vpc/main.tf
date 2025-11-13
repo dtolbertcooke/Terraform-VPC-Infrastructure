@@ -34,7 +34,6 @@ module "vpc" {
   # enable NAT Gateway
   # prod: create one NAT gateway per AZ for high availability and fault tolerance
   # dev: create a single NAT gateway for cost efficiency
-  # currently set for 'prod'
   enable_nat_gateway     = true
   single_nat_gateway     = var.environment == "dev" || var.environment == "test" ? true : false # one NAT gateway for dev/test
   one_nat_gateway_per_az = var.environment == "dev" || var.environment == "test" ? false : true # one NAT gateway per AZ for prod
