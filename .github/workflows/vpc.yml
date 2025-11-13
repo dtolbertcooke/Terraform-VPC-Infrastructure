@@ -184,4 +184,4 @@ jobs:
 
       # Apply terraform changes to build infrastructure using tfvars for environment
       - name: Terraform Apply
-        run: terraform apply -var="personal_ip=${{ secrets.PERSONAL_IP }}" -auto-approve -lock=false
+        run: terraform apply -var="personal_ip=${{ secrets.PERSONAL_IP }}" -var="environment=${{ env.ENVIRONMENT }}" -auto-approve -lock=false
