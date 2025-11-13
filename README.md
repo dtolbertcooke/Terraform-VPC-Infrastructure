@@ -182,5 +182,5 @@ Each environment has its own **GitHub Environment**, **secrets** and **Terraform
 
 ## Author
 
-Doug Tolbert-Cooke
+Doug Tolbert-Cooke  
 Cloud & DevOps Engineer
