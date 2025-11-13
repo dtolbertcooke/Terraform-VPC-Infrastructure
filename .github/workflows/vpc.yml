@@ -182,6 +182,6 @@ jobs:
       - name: Terraform Init
         run: terraform init -backend-config=${{ env.ENVIRONMENT }}.hcl
 
-      # Apply terraform changes to build infrastructure using tfvars for environment
+      # Apply terraform changes to build infrastructure
       - name: Terraform Apply
         run: terraform apply -var="personal_ip=${{ secrets.PERSONAL_IP }}" -var="environment=${{ env.ENVIRONMENT }}" -auto-approve -lock=false
