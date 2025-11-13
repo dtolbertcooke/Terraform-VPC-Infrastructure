@@ -138,4 +138,4 @@ jobs:
       # destroy vpc/subnets/SG/etc. config
       - name: Terraform Destroy (Environment)
         if: ${{ env.ENVIRONMENT != 'global-infra' }}
-        run: terraform destroy -var="personal_ip=${{ secrets.PERSONAL_IP }}" -auto-approve -lock=false
+        run: terraform destroy -var="personal_ip=${{ secrets.PERSONAL_IP }}" -var="environment=${{ env.ENVIRONMENT }}" -auto-approve -lock=false
