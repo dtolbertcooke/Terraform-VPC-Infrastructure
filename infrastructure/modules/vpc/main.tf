@@ -8,8 +8,8 @@ module "vpc" {
   name            = "${var.project_name}-${var.environment}-vpc"
   cidr            = var.vpc_cidr
   azs             = var.azs
-  public_subnets  = ["172.16.0.0/24", "172.16.1.0/24"]
-  private_subnets = ["172.16.2.0/24", "172.16.3.0/24"]
+  public_subnets  = var.public_subnets
+  private_subnets = var.private_subnets
 
   # Cloudwatch log group and IAM role will be created
   enable_flow_log                      = true
