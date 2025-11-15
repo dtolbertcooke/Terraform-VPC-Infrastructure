@@ -16,7 +16,7 @@ terraform.tfvars
 .github/workflows/prototype-*.yml
 legacy/
 
-# remove after finalizing:
+# remove from .gitignore after finalizing:
 Architecture.md
 docs/
 PROJECT_DELIVERABLES.md
