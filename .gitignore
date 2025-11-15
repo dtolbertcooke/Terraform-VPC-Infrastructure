@@ -12,11 +12,7 @@ terraform.tfvars
 # Ignore Terraform lock files
 .terraform.lock.hcl
 
-# Ignore prototype workflows
-.github/workflows/prototype-*.yml
-legacy/
-
-PROJECT_DELIVERABLES.md
 # remove after finalizing:
-Architecture.md
+# remove from .gitignore after finalizing:
 docs/
+PROJECT_DELIVERABLES.md
