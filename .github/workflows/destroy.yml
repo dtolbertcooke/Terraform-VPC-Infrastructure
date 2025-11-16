@@ -21,16 +21,14 @@ permissions:
 jobs:
   destroy:
     runs-on: ubuntu-latest
-    # Maps branch to environment (dev=dev, test=test, main=prod, global-infra=global-infra)
+    # Maps branch to environment (dev=dev, test=test, main=prod)
     environment: ${{ github.ref == 'refs/heads/main' && 'prod' ||
       github.ref == 'refs/heads/test' && 'test' ||
-      github.ref == 'refs/heads/dev' && 'dev' ||
-      github.ref == 'refs/heads/global-infra' && 'global-infra' }}
+      github.ref == 'refs/heads/dev' && 'dev' }}
     env:
       ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'prod' ||
         github.ref == 'refs/heads/test' && 'test' ||
-        github.ref == 'refs/heads/dev' && 'dev' ||
-        github.ref == 'refs/heads/global-infra' && 'global-infra' }}
+        github.ref == 'refs/heads/dev' && 'dev' }}
 
     defaults:
       run:
@@ -119,7 +117,7 @@ jobs:
       - name: Destroy (Global)
         if: ${{ env.ENVIRONMENT == 'global-infra' }}
         working-directory: infrastructure/backend/global
-        run: terraform destroy -var-file=${{ env.ENVIRONMENT }}.tfvars -var="aws_account_id=${{ secrets.AWS_ACCOUNT_ID }}" -auto-approve -lock=false # -lock=false to avoid locking issues on destroy
+        run: terraform destroy -var-file=${{ env.ENVIRONMENT }}.tfvars -var="aws_account_id=${{ vars.AWS_ACCOUNT_ID }}" -auto-approve -lock=false # -lock=false to avoid locking issues on destroy
 
       # 8. Remove backend config from SSM Parameter store (Global)
       - name: Remove Backend Config from SSM Parameter Store (Global)

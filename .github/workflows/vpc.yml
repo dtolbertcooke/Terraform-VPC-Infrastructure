@@ -79,23 +79,23 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: "us-east-1" # default region just for the OIDC STS call; set actual region in next step
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-oidc-role-${{ env.ENVIRONMENT }}
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-oidc-role-${{ env.ENVIRONMENT }}
 
       # Fetch backend config from SSM
       # - Retrieves global S3/DynamoDB state backend
       # - Creates backend config file for terraform init
       - name: Fetch Backend Config
         run: |
-          BUCKET=$(aws ssm get-parameter --name "/tf/global-infra/backend/bucket" --query "Parameter.Value" --output text)
-          TABLE=$(aws ssm get-parameter --name "/tf/global-infra/backend/table" --query "Parameter.Value" --output text)
-          REGION=$(aws ssm get-parameter --name "/tf/global-infra/backend/region" --query "Parameter.Value" --output text)
-          echo "TF_VAR_state_bucket_name=$BUCKET" >> $GITHUB_ENV
+          STATE_BUCKET=$(aws ssm get-parameter --name "/tf/global-backend/state-bucket" --query "Parameter.Value" --output text)
+          STATE_TABLE=$(aws ssm get-parameter --name "/tf/global-backend/state-table" --query "Parameter.Value" --output text)
+          REGION=$(aws ssm get-parameter --name "/tf/global-backend/region" --query "Parameter.Value" --output text)
+          echo "TF_VAR_state_bucket_name=$STATE_BUCKET" >> $GITHUB_ENV
 
           cat > ${{ env.ENVIRONMENT }}.hcl <<EOF
-          bucket         = "$BUCKET"
+          bucket         = "$STATE_BUCKET"
           key            = "${{ env.ENVIRONMENT }}/terraform.tfstate"
           region         = "$REGION"
-          dynamodb_table = "$TABLE"
+          dynamodb_table = "$STATE_TABLE"
           encrypt        = true
           EOF
 
@@ -154,23 +154,23 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: "us-east-1" # default region just for the OIDC STS call; set actual region in next step
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-oidc-role-${{ env.ENVIRONMENT }}
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-oidc-role-${{ env.ENVIRONMENT }}
 
       # Fetch backend config from SSM
       # - Retrieves global S3/DynamoDB state backend
       # - Creates backend config file for terraform init
       - name: Fetch Backend Config
         run: |
-          BUCKET=$(aws ssm get-parameter --name "/tf/global-infra/backend/bucket" --query "Parameter.Value" --output text)
-          TABLE=$(aws ssm get-parameter --name "/tf/global-infra/backend/table" --query "Parameter.Value" --output text)
-          REGION=$(aws ssm get-parameter --name "/tf/global-infra/backend/region" --query "Parameter.Value" --output text)
-          echo "TF_VAR_state_bucket_name=$BUCKET" >> $GITHUB_ENV
+          STATE_BUCKET=$(aws ssm get-parameter --name "/tf/global-backend/state-bucket" --query "Parameter.Value" --output text)
+          STATE_TABLE=$(aws ssm get-parameter --name "/tf/global-backend/state-table" --query "Parameter.Value" --output text)
+          REGION=$(aws ssm get-parameter --name "/tf/global-backend/region" --query "Parameter.Value" --output text)
+          echo "TF_VAR_state_bucket_name=$STATE_BUCKET" >> $GITHUB_ENV
 
           cat > ${{ env.ENVIRONMENT }}.hcl <<EOF
-          bucket         = "$BUCKET"
+          bucket         = "$STATE_BUCKET"
           key            = "${{ env.ENVIRONMENT }}/terraform.tfstate"
           region         = "$REGION"
-          dynamodb_table = "$TABLE"
+          dynamodb_table = "$STATE_TABLE"
           encrypt        = true
           EOF
 
