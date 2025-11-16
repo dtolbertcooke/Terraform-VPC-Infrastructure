@@ -78,10 +78,8 @@ jobs:
 
       # init terraform locally on github runner
       - name: Terraform Init (Environment)
-        if: ${{ env.ENVIRONMENT != 'global-infra' }}
         run: terraform init -backend-config=${{ env.ENVIRONMENT }}.hcl
 
       # destroy vpc/subnets/SG/etc. config
       - name: Terraform Destroy (Environment)
-        if: ${{ env.ENVIRONMENT != 'global-infra' }}
         run: terraform destroy -var="personal_ip=${{ secrets.PERSONAL_IP }}" -var="environment=${{ env.ENVIRONMENT }}" -auto-approve -lock=false
