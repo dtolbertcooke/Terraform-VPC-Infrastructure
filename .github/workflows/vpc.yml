@@ -18,6 +18,8 @@ jobs:
   tests:
     name: Tests & Lint
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       # Checkout the repo
