@@ -23,7 +23,6 @@ See [`Architecture.md`](./docs/Architecture.md) for diagrams and details.
 
 ```bash
 ├── .github/workflows/                          # GitHub Actions pipelines
-│   ├── bootstrap-global.yml
 │   ├── destroy.yml
 │   ├── vpc.yml
 ├── .tfsec/
@@ -32,11 +31,6 @@ See [`Architecture.md`](./docs/Architecture.md) for diagrams and details.
 │   └── vpc-diagram.png                         # Architecture diagram
 │   └── ADRs/                                   # Architecture Decision Records
 ├── infrastructure
-│   └── backend/global/                         # global configuration for each environment
-│   │   ├── global-infra.tfvars
-│   │   ├── global.tf
-│   │   ├── outputs.tf
-│   │   └── variables.tf
 │   ├── env/                                    # configuration for each environment
 │   │   ├── dev.yml
 │   │   ├── test.yml
@@ -63,7 +57,7 @@ See [`Architecture.md`](./docs/Architecture.md) for diagrams and details.
   - SSM (Parameter storage)
 - **Bootstrap Role / Admin User** with **least privilege** for the above resources
 - **GitHub Environment Secrets** per environment:
-  - `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` (only for bootstrap)
+  - `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` (only for destroy)
 - **GitHub Repository Secrets**:
   - `AWS_ACCOUNT_ID` (used in all workflows)
   - `PERSONAL_IP` (used in all workflows)[to allow ssh access from your IP]
@@ -72,7 +66,7 @@ See [`Architecture.md`](./docs/Architecture.md) for diagrams and details.
 ## Setup
 
 **Step 1: Bootstrap Remote Backend**
-Run the **bootstrap-global.yml** workflow once (from the global-infra branch).
+I have a separate workflow that is only ran once (from the Terraform-GLOBAL repo).
 
 **This creates:**
 
@@ -100,20 +94,18 @@ Run the vpc.yml workflow for target environment (branch).
 
 This project uses GitHub Actions with environment level isolation and deployment protection for each stage.
 
-| Environment    | Branch         | AWS Context | Authentication                       | Deployment Type      | Protection level               | Purpose                                     |
-| -------------- | -------------- | ----------- | ------------------------------------ | -------------------- | ------------------------------ | ------------------------------------------- |
-| `global-infra` | `global-infra` | Bootstrap   | Static AWS Admin keys (one time use) | Manuel (on approval) | Protected — reviewers required | Creates global backend (S3, DynamoDB, OIDC) |
-| `dev`          | `dev`          | Development | OIDC → IAM Role                      | Automatic (on push)  | Auto deploy                    | Deploys VPC (Dev)                           |
-| `test`         | `test`         | Staging     | OIDC → IAM Role                      | Automatic (on push)  | Auto deploy                    | Deploys VPC (Test)                          |
-| `prod`         | `main`         | Production  | OIDC → IAM Role                      | Manuel (on approval) | Protected — reviewers required | Deploys VPC (Prod)                          |
+| Environment | Branch | AWS Context | Authentication  | Deployment Type      | Protection level               | Purpose            |
+| ----------- | ------ | ----------- | --------------- | -------------------- | ------------------------------ | ------------------ |
+| `dev`       | `dev`  | Development | OIDC → IAM Role | Automatic (on push)  | Auto deploy                    | Deploys VPC (Dev)  |
+| `test`      | `test` | Staging     | OIDC → IAM Role | Automatic (on push)  | Auto deploy                    | Deploys VPC (Test) |
+| `prod`      | `main` | Production  | OIDC → IAM Role | Manuel (on approval) | Protected — reviewers required | Deploys VPC (Prod) |
 
 Each environment has its own **GitHub Environment**, **secrets** and **Terraform remote backend**, ensuring strict separation of state, credentials and deployment permissions.
 
 ## CI/CD Workflow Summary
 
-1. Bootstrap (one time) → bootstrap-global.yml
-2. Deploy per environment → vpc.yml
-3. Destroy global/environment → destroy.yml
+1. Deploy per environment → vpc.yml
+2. Destroy environment → destroy.yml
 
 - On Push:
 
